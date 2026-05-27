@@ -106,4 +106,6 @@ export const assignmentsApi = {
 
 export const papersApi = {
   get: (id: string) => api.get<{ success: boolean; data: QuestionPaper }>(`/papers/${id}`),
+  list: (params?: { subject?: string; grade?: string }) =>
+    api.get<{ success: boolean; data: QuestionPaper[] }>('/papers', { params }),
 };

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, BookOpen, Wand2, Library, Settings } from 'lucide-react';
+import { Home, Users, BookOpen, Wand2, Library, Settings, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Home', icon: Home, href: '/' },
   { label: 'My Groups', icon: Users, href: '/groups' },
   { label: 'Assignments', icon: BookOpen, href: '/assignments' },
+  { label: 'Answer Keys', icon: KeyRound, href: '/answer-keys' },
   { label: "AI Teacher's Toolkit", icon: Wand2, href: '/toolkit' },
   { label: 'My Library', icon: Library, href: '/library' },
 ];

@@ -69,7 +69,7 @@ export default function StepReview({ form, file, totalMarks, totalQuestions }: P
         <div className="rounded-xl bg-ink-900 text-white p-4 text-sm">
           <p className="font-semibold mb-1">✦ Ready to generate</p>
           <p className="text-ink-300 text-xs">
-            Claude AI will create a structured exam paper with {totalQuestions} questions across {form.questionTypes.length} section{form.questionTypes.length > 1 ? 's' : ''} for {form.subject} – {form.topic}.
+            VedaAI will create a structured exam paper with {totalQuestions} questions across {form.questionTypes.length} section{form.questionTypes.length > 1 ? 's' : ''} for {form.subject} – {form.topic}.
           </p>
         </div>
       </div>

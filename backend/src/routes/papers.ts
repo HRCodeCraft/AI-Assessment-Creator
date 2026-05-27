@@ -4,6 +4,25 @@ import { Assignment } from '../models/Assignment';
 
 const router = Router();
 
+// GET /api/papers - List all papers with optional filters
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const { subject, grade } = req.query as { subject?: string; grade?: string };
+    const filter: Record<string, unknown> = {};
+    if (subject) filter['metadata.subject'] = { $regex: subject, $options: 'i' };
+    if (grade) filter['metadata.grade'] = { $regex: grade, $options: 'i' };
+
+    const papers = await QuestionPaper.find(filter)
+      .select('metadata sections generatedAt assignmentId')
+      .sort({ generatedAt: -1 })
+      .lean();
+
+    res.json({ success: true, data: papers });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch papers' });
+  }
+});
+
 // GET /api/papers/:id - Get question paper
 router.get('/:id', async (req: Request, res: Response) => {
   try {
