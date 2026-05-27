@@ -1,12 +1,17 @@
 'use client';
 
 import { Bell, ChevronRight } from 'lucide-react';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface TopbarProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
 export default function Topbar({ breadcrumbs = [] }: TopbarProps) {
+  const { settings } = useSettingsStore();
+  const firstName = settings.teacherName?.split(' ')[0] || 'Teacher';
+  const initial = settings.teacherName?.[0]?.toUpperCase() || 'T';
+
   return (
     <header className="h-[56px] bg-white/80 backdrop-blur-sm border-b border-ink-100 flex items-center justify-between px-6 sticky top-0 z-20">
       {/* Breadcrumbs */}
@@ -29,9 +34,9 @@ export default function Topbar({ breadcrumbs = [] }: TopbarProps) {
         </button>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ink-700 to-ink-900 flex items-center justify-center">
-            <span className="text-white text-xs font-semibold">J</span>
+            <span className="text-white text-xs font-semibold">{initial}</span>
           </div>
-          <span className="text-sm font-medium text-ink-700">John Doe</span>
+          <span className="text-sm font-medium text-ink-700">{settings.teacherName || 'Teacher'}</span>
         </div>
       </div>
     </header>

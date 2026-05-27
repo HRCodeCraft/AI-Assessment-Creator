@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, BookOpen, Wand2, Library, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const navItems = [
   { label: 'Home', icon: Home, href: '/' },
@@ -15,6 +16,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { settings } = useSettingsStore();
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
@@ -62,11 +64,13 @@ export default function Sidebar() {
 
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl mt-1">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-semibold text-xs">D</span>
+            <span className="text-white font-semibold text-xs">
+              {settings.schoolName?.[0]?.toUpperCase() ?? 'S'}
+            </span>
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-ink-800 truncate">Delhi Public School</p>
-            <p className="text-xs text-ink-400 truncate">Bokaro Steel City</p>
+            <p className="text-xs font-semibold text-ink-800 truncate">{settings.schoolName || 'School Name'}</p>
+            <p className="text-xs text-ink-400 truncate">{settings.schoolCity || 'City'}</p>
           </div>
         </div>
       </div>
