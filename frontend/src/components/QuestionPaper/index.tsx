@@ -1,0 +1,199 @@
+'use client';
+
+import { useRef } from 'react';
+import { Download, RefreshCw } from 'lucide-react';
+import { QuestionPaper, Section } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
+interface Props {
+  paper: QuestionPaper;
+  onRegenerate?: () => void;
+}
+
+const SCHOOL_NAME = 'Delhi Public School, Sector-4, Bokaro';
+
+function difficultyLabel(d: string): string {
+  if (d === 'easy') return 'Easy';
+  if (d === 'medium') return 'Moderate';
+  if (d === 'hard') return 'Challenging';
+  return d;
+}
+
+function difficultyInline(d: string): string {
+  if (d === 'easy') return 'Easy';
+  if (d === 'medium') return 'Moderate';
+  if (d === 'hard') return 'Challenging';
+  return d;
+}
+
+export default function QuestionPaperView({ paper, onRegenerate }: Props) {
+  const paperRef = useRef<HTMLDivElement>(null);
+
+  async function handleDownloadPDF() {
+    if (!paperRef.current) return;
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(paperRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      let y = 0;
+      while (y < pdfHeight) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -y, pdfWidth, pdfHeight);
+        y += pageHeight;
+      }
+
+      pdf.save(`${paper.metadata.subject}-${paper.metadata.grade}-paper.pdf`);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Action bar */}
+      <div className="flex items-center justify-end gap-3">
+        {onRegenerate && (
+          <button onClick={onRegenerate} className="btn-secondary gap-2">
+            <RefreshCw size={15} />
+            Regenerate
+          </button>
+        )}
+        <button onClick={handleDownloadPDF} className="btn-primary gap-2">
+          <Download size={15} />
+          Download as PDF
+        </button>
+      </div>
+
+      {/* Paper */}
+      <div
+        ref={paperRef}
+        className="bg-white rounded-2xl shadow-card border border-ink-100 overflow-hidden"
+      >
+        {/* Paper header */}
+        <div className="px-10 pt-8 pb-4 text-center border-b border-ink-200">
+          <h1 className="text-xl font-bold text-ink-900">{SCHOOL_NAME}</h1>
+          <p className="text-sm text-ink-700 mt-1">Subject: {paper.metadata.subject}</p>
+          <p className="text-sm text-ink-700">Class: {paper.metadata.grade}</p>
+        </div>
+
+        {/* Meta row */}
+        <div className="px-10 py-3 flex items-center justify-between border-b border-ink-200">
+          <span className="text-sm text-ink-700">Time Allowed: {paper.metadata.duration}</span>
+          <span className="text-sm text-ink-700">Maximum Marks: {paper.metadata.totalMarks}</span>
+        </div>
+
+        <div className="px-10 py-4">
+          {/* General instructions */}
+          <div className="mb-4">
+            {paper.metadata.instructions.map((inst, i) => (
+              <p key={i} className="text-sm text-ink-700 font-medium">{inst}</p>
+            ))}
+          </div>
+
+          {/* Student info lines */}
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-3 text-sm text-ink-700">
+              <span className="font-medium">Name:</span>
+              <span className="flex-1 border-b border-ink-700" style={{ minWidth: 200 }} />
+            </div>
+            <div className="flex items-center gap-3 text-sm text-ink-700">
+              <span className="font-medium">Roll Number:</span>
+              <span className="flex-1 border-b border-ink-700" style={{ minWidth: 160 }} />
+            </div>
+            <div className="flex items-center gap-3 text-sm text-ink-700">
+              <span className="font-medium">Class:</span>
+              <span className="text-ink-500">{paper.metadata.grade}</span>
+              <span className="font-medium ml-4">Section:</span>
+              <span className="w-20 border-b border-ink-700" />
+            </div>
+          </div>
+
+          {/* Sections */}
+          {paper.sections.map((section) => (
+            <SectionBlock key={section.id} section={section} />
+          ))}
+
+          <p className="text-center text-sm font-semibold text-ink-700 mt-6 pt-4 border-t border-ink-200">
+            End of Question Paper
+          </p>
+
+          {/* Answer Key */}
+          <AnswerKey sections={paper.sections} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionBlock({ section }: { section: Section }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-base font-bold text-ink-900 text-center mb-1">{section.title}</h2>
+      <p className="text-sm font-semibold text-ink-800 mb-0.5">{section.questionType}</p>
+      <p className="text-xs text-ink-600 mb-3">{section.instruction}</p>
+
+      <ol className="space-y-2.5">
+        {section.questions.map((q) => (
+          <li key={q.number} className="text-sm">
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-ink-800 flex-shrink-0 w-6">{q.number}.</span>
+              <div className="flex-1">
+                <span className="text-ink-500 mr-1">[{difficultyInline(q.difficulty)}]</span>
+                <span className="text-ink-800">{q.text}</span>
+                <span className="ml-1.5 text-ink-500 font-medium">[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
+                {q.options && (
+                  <ul className="mt-1.5 ml-2 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {q.options.map((opt, i) => (
+                      <li key={i} className="text-xs text-ink-700">{opt}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function AnswerKey({ sections }: { sections: Section[] }) {
+  const mcqSections = sections.filter(
+    (s) => s.questionType?.toLowerCase().includes('multiple') || s.questionType === 'mcq'
+  );
+  if (mcqSections.length === 0) return null;
+
+  return (
+    <div className="mt-6 pt-4 border-t border-ink-200">
+      <h3 className="text-sm font-bold text-ink-900 mb-3">Answer Key:</h3>
+      {mcqSections.map((section) => (
+        <div key={section.id} className="space-y-1 mb-3">
+          {section.questions.map((q, i) => {
+            const correctOption = q.options?.find((o) =>
+              o.toLowerCase().startsWith('a.') ? i % 4 === 0 : true
+            );
+            return (
+              <p key={q.number} className="text-xs text-ink-700">
+                {i + 1}.{' '}
+                {q.options?.[0] || 'Refer to the question for context.'}
+              </p>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
