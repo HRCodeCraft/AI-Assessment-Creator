@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { config } from '../config';
 import { IAssignment } from '../models/Assignment';
 
-const client = new Anthropic({ apiKey: config.anthropicApiKey });
+const groq = new Groq({ apiKey: config.groqApiKey });
 
 export interface GeneratedPaper {
   metadata: {
@@ -27,6 +27,7 @@ export interface GeneratedPaper {
       options?: string[];
       difficulty: 'easy' | 'medium' | 'hard';
       marks: number;
+      correctAnswer: string;
     }>;
   }>;
 }
@@ -48,10 +49,8 @@ function buildPrompt(assignment: IAssignment): string {
     )
     .join('\n');
 
-  const isMCQ = (label: string) =>
-    /multiple.?choice|mcq/i.test(label);
-  const isTF = (label: string) =>
-    /true.?false|yes.?no/i.test(label);
+  const isMCQ = (label: string) => /multiple.?choice|mcq/i.test(label);
+  const isTF = (label: string) => /true.?false|yes.?no/i.test(label);
 
   const fileContext = assignment.fileContent
     ? `\nREFERENCE MATERIAL:\n${assignment.fileContent.slice(0, 3000)}`
@@ -75,22 +74,27 @@ DIFFICULTY (approximate):
 - Medium: ${difficultyDistribution.medium}%
 - Hard: ${difficultyDistribution.hard}%
 
-RULES:
-1. Return ONLY valid JSON — no markdown, no explanation
+STRICT RULES:
+1. Return ONLY valid JSON — no markdown fences, no explanation text whatsoever
 2. Questions must be relevant to "${assignment.topic}" in "${assignment.subject}" for ${assignment.grade}
-3. For MCQ/True-False: include "options" array (MCQ: 4 options labeled "A. ...", TF: ["A. True","B. False"])
-4. Question numbers are sequential across all sections
-5. Honor exact counts and marks per question
-6. Questions must be clear, grade-appropriate, and educationally valid
+3. MCQ options must be labeled "A. ...", "B. ...", "C. ...", "D. ..."
+4. True/False options: ["A. True", "B. False"]
+5. Question numbers are sequential across all sections
+6. Honor exact counts and marks per question
+7. Questions must be clear, grade-appropriate, and educationally valid
+8. Every question MUST have a "correctAnswer" field:
+   - For MCQ: the full correct option text e.g. "B. Mitochondria"
+   - For True/False: "A. True" or "B. False"
+   - For short/long answer: a concise model answer (1-3 sentences max)
 
-JSON structure:
+Return this exact JSON structure:
 {
   "metadata": {
     "title": "Question Paper: ${assignment.topic}",
     "subject": "${assignment.subject}",
     "grade": "${assignment.grade}",
     "topic": "${assignment.topic}",
-    "totalMarks": <calculated>,
+    "totalMarks": <sum of all marks>,
     "duration": "${duration}",
     "instructions": ["All questions are compulsory.", "Read carefully before answering.", "Mobile phones not permitted."]
   },
@@ -98,17 +102,18 @@ JSON structure:
     {
       "id": "A",
       "title": "Section A",
-      "questionType": "${questionTypes[0]?.label || 'questions'}",
+      "questionType": "${questionTypes[0]?.label || 'Questions'}",
       "instruction": "Attempt all questions.",
       "totalMarks": <section total>,
       "questions": [
         {
           "number": 1,
-          "text": "...",
+          "text": "Question text here?",
           "type": "${isMCQ(questionTypes[0]?.label || '') ? 'mcq' : isTF(questionTypes[0]?.label || '') ? 'true-false' : 'short'}",
-          "options": ${isMCQ(questionTypes[0]?.label || '') ? '["A. opt1","B. opt2","C. opt3","D. opt4"]' : isTF(questionTypes[0]?.label || '') ? '["A. True","B. False"]' : 'null'},
+          "options": ${isMCQ(questionTypes[0]?.label || '') ? '["A. opt1","B. opt2","C. opt3","D. opt4"]' : 'null'},
           "difficulty": "easy",
-          "marks": ${questionTypes[0]?.marksEach || 1}
+          "marks": ${questionTypes[0]?.marksEach || 1},
+          "correctAnswer": "B. [correct option text]"
         }
       ]
     }
@@ -121,6 +126,11 @@ function parseAndValidate(raw: string): GeneratedPaper {
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   }
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
 
   const parsed = JSON.parse(cleaned) as GeneratedPaper;
 
@@ -128,13 +138,10 @@ function parseAndValidate(raw: string): GeneratedPaper {
     throw new Error('Invalid paper structure returned by AI');
   }
 
-  // Recalculate totals to ensure accuracy
   let totalMarks = 0;
   for (const section of parsed.sections) {
     let sectionTotal = 0;
-    for (const q of section.questions) {
-      sectionTotal += q.marks;
-    }
+    for (const q of section.questions) sectionTotal += q.marks;
     section.totalMarks = sectionTotal;
     totalMarks += sectionTotal;
   }
@@ -150,36 +157,27 @@ export async function generateQuestionPaper(
   const prompt = buildPrompt(assignment);
 
   onProgress?.(10, 'Analyzing assignment requirements...');
+  onProgress?.(25, 'Connecting to Groq AI...');
 
-  let fullResponse = '';
-  let chunkCount = 0;
-
-  const stream = client.messages.stream({
-    model: 'claude-sonnet-4-6',
+  const response = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are an expert exam paper creator. Respond with ONLY valid JSON — no markdown, no prose, no explanation.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.7,
     max_tokens: 8192,
-    system:
-      'You are an expert exam paper creator. Respond with ONLY valid JSON — no markdown, no prose.',
-    messages: [{ role: 'user', content: prompt }],
   });
 
-  onProgress?.(20, 'Structuring the exam format...');
+  onProgress?.(85, 'Generating questions...');
 
-  for await (const chunk of stream) {
-    if (
-      chunk.type === 'content_block_delta' &&
-      chunk.delta.type === 'text_delta'
-    ) {
-      fullResponse += chunk.delta.text;
-      chunkCount++;
-      if (chunkCount % 20 === 0) {
-        const estimated = Math.min(20 + Math.floor((fullResponse.length / 7000) * 65), 88);
-        onProgress?.(estimated, 'Generating questions...');
-      }
-    }
-  }
+  const raw = response.choices[0]?.message?.content || '';
+  onProgress?.(92, 'Validating and organizing...');
 
-  onProgress?.(90, 'Validating and organizing...');
-  const paper = parseAndValidate(fullResponse);
+  const paper = parseAndValidate(raw);
   onProgress?.(100, 'Question paper ready!');
 
   return paper;

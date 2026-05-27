@@ -53,6 +53,7 @@ export interface Question {
   options?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   marks: number;
+  correctAnswer?: string;
 }
 
 export interface Section {

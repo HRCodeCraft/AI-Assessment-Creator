@@ -3,31 +3,20 @@
 import { useRef } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 import { QuestionPaper, Section } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface Props {
   paper: QuestionPaper;
   onRegenerate?: () => void;
 }
 
-const SCHOOL_NAME = 'Delhi Public School, Sector-4, Bokaro';
-
-function difficultyLabel(d: string): string {
-  if (d === 'easy') return 'Easy';
-  if (d === 'medium') return 'Moderate';
-  if (d === 'hard') return 'Challenging';
-  return d;
-}
-
-function difficultyInline(d: string): string {
-  if (d === 'easy') return 'Easy';
-  if (d === 'medium') return 'Moderate';
-  if (d === 'hard') return 'Challenging';
-  return d;
-}
-
 export default function QuestionPaperView({ paper, onRegenerate }: Props) {
   const paperRef = useRef<HTMLDivElement>(null);
+  const { settings } = useSettingsStore();
+
+  const schoolLine = [settings.schoolName, settings.schoolAddress, settings.schoolCity]
+    .filter(Boolean)
+    .join(', ');
 
   async function handleDownloadPDF() {
     if (!paperRef.current) return;
@@ -84,7 +73,7 @@ export default function QuestionPaperView({ paper, onRegenerate }: Props) {
       >
         {/* Paper header */}
         <div className="px-10 pt-8 pb-4 text-center border-b border-ink-200">
-          <h1 className="text-xl font-bold text-ink-900">{SCHOOL_NAME}</h1>
+          <h1 className="text-xl font-bold text-ink-900">{schoolLine || 'School Name'}</h1>
           <p className="text-sm text-ink-700 mt-1">Subject: {paper.metadata.subject}</p>
           <p className="text-sm text-ink-700">Class: {paper.metadata.grade}</p>
         </div>
@@ -127,10 +116,10 @@ export default function QuestionPaperView({ paper, onRegenerate }: Props) {
           ))}
 
           <p className="text-center text-sm font-semibold text-ink-700 mt-6 pt-4 border-t border-ink-200">
-            End of Question Paper
+            *** End of Question Paper ***
           </p>
 
-          {/* Answer Key */}
+          {/* Answer Key — separate section */}
           <AnswerKey sections={paper.sections} />
         </div>
       </div>
@@ -151,7 +140,6 @@ function SectionBlock({ section }: { section: Section }) {
             <div className="flex items-start gap-2">
               <span className="font-medium text-ink-800 flex-shrink-0 w-6">{q.number}.</span>
               <div className="flex-1">
-                <span className="text-ink-500 mr-1">[{difficultyInline(q.difficulty)}]</span>
                 <span className="text-ink-800">{q.text}</span>
                 <span className="ml-1.5 text-ink-500 font-medium">[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                 {q.options && (
@@ -171,29 +159,24 @@ function SectionBlock({ section }: { section: Section }) {
 }
 
 function AnswerKey({ sections }: { sections: Section[] }) {
-  const mcqSections = sections.filter(
-    (s) => s.questionType?.toLowerCase().includes('multiple') || s.questionType === 'mcq'
+  const allQuestions = sections.flatMap((s) =>
+    s.questions.map((q) => ({ ...q, sectionTitle: s.title }))
   );
-  if (mcqSections.length === 0) return null;
+
+  const hasAnswers = allQuestions.some((q) => q.correctAnswer);
+  if (!hasAnswers) return null;
 
   return (
-    <div className="mt-6 pt-4 border-t border-ink-200">
-      <h3 className="text-sm font-bold text-ink-900 mb-3">Answer Key:</h3>
-      {mcqSections.map((section) => (
-        <div key={section.id} className="space-y-1 mb-3">
-          {section.questions.map((q, i) => {
-            const correctOption = q.options?.find((o) =>
-              o.toLowerCase().startsWith('a.') ? i % 4 === 0 : true
-            );
-            return (
-              <p key={q.number} className="text-xs text-ink-700">
-                {i + 1}.{' '}
-                {q.options?.[0] || 'Refer to the question for context.'}
-              </p>
-            );
-          })}
-        </div>
-      ))}
+    <div className="mt-8 pt-6 border-t-2 border-dashed border-ink-300">
+      <h3 className="text-base font-bold text-ink-900 mb-4 text-center">ANSWER KEY</h3>
+      <div className="grid grid-cols-1 gap-1.5">
+        {allQuestions.map((q) => (
+          <div key={q.number} className="flex items-start gap-3 text-sm">
+            <span className="font-semibold text-ink-700 flex-shrink-0 w-8">Q{q.number}.</span>
+            <span className="text-ink-800">{q.correctAnswer || '—'}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

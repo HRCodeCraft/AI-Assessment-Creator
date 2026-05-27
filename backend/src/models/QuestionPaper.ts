@@ -7,6 +7,7 @@ export interface IQuestion {
   options?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   marks: number;
+  correctAnswer?: string;
 }
 
 export interface ISection {
@@ -49,6 +50,7 @@ const QuestionSchema = new Schema<IQuestion>(
       required: true,
     },
     marks: { type: Number, required: true },
+    correctAnswer: { type: String },
   },
   { _id: false }
 );
