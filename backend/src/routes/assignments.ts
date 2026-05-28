@@ -1,9 +1,27 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
+import pdfParse from 'pdf-parse';
 import { Assignment } from '../models/Assignment';
 import { generationQueue } from '../lib/queue';
 import { getRedisClient } from '../lib/redis';
+
+async function extractFileText(file: Express.Multer.File): Promise<string> {
+  try {
+    const mime = file.mimetype;
+    if (mime === 'application/pdf') {
+      const parsed = await pdfParse(file.buffer);
+      return (parsed.text || '').replace(/\s+/g, ' ').trim().slice(0, 3000);
+    }
+    if (mime.startsWith('image/')) {
+      return ''; // Images can't be parsed for text
+    }
+    return file.buffer.toString('utf-8').slice(0, 3000);
+  } catch (err) {
+    console.warn('[Upload] File text extraction failed, continuing without it:', (err as Error).message);
+    return '';
+  }
+}
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -84,7 +102,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
     let fileContent: string | undefined;
     if (req.file) {
-      fileContent = req.file.buffer.toString('utf-8');
+      fileContent = await extractFileText(req.file);
     }
 
     const assignment = await Assignment.create({

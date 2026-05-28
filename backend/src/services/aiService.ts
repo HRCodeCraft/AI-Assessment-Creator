@@ -1,8 +1,6 @@
-import Groq from 'groq-sdk';
+import axios, { AxiosError } from 'axios';
 import { config } from '../config';
 import { IAssignment } from '../models/Assignment';
-
-const groq = new Groq({ apiKey: config.groqApiKey });
 
 export interface GeneratedPaper {
   metadata: {
@@ -53,7 +51,7 @@ function buildPrompt(assignment: IAssignment): string {
   const isTF = (label: string) => /true.?false|yes.?no/i.test(label);
 
   const fileContext = assignment.fileContent
-    ? `\nREFERENCE MATERIAL:\n${assignment.fileContent.slice(0, 3000)}`
+    ? `\n\nIMPORTANT — REFERENCE MATERIAL (base your questions on this content):\n"""\n${assignment.fileContent.slice(0, 3000)}\n"""\nAll questions MUST be directly based on the above reference material.`
     : '';
 
   return `You are an expert academic exam paper creator. Generate a comprehensive question paper.
@@ -123,25 +121,50 @@ Return this exact JSON structure:
 
 function parseAndValidate(raw: string): GeneratedPaper {
   let cleaned = raw.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-  }
+
+  // Strip any markdown fences
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+  // Extract outermost JSON object
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  if (firstBrace === -1 || lastBrace === -1) {
+    console.error('[AI] Raw response (no JSON found):', raw.slice(0, 500));
+    throw new Error('AI did not return JSON. Raw: ' + raw.slice(0, 200));
   }
+  cleaned = cleaned.slice(firstBrace, lastBrace + 1);
 
-  const parsed = JSON.parse(cleaned) as GeneratedPaper;
+  let parsed: GeneratedPaper;
+  try {
+    parsed = JSON.parse(cleaned) as GeneratedPaper;
+  } catch (e) {
+    console.error('[AI] JSON parse failed. Raw snippet:', cleaned.slice(0, 500));
+    throw new Error('AI returned invalid JSON: ' + (e as Error).message);
+  }
 
   if (!parsed.metadata || !Array.isArray(parsed.sections)) {
     throw new Error('Invalid paper structure returned by AI');
   }
 
+  // Normalize question types to match MongoDB enum
+  const normalizeType = (t: string): string => {
+    const s = t.toLowerCase().replace(/[^a-z]/g, '');
+    if (s === 'truefalse' || s === 'tf' || s === 'yesno') return 'true-false';
+    if (s === 'multiplechoice' || s === 'mcq' || s === 'mc') return 'mcq';
+    if (s === 'shortanswer' || s === 'short') return 'short';
+    if (s === 'longanswer' || s === 'long' || s === 'essay') return 'long';
+    if (s === 'fillintheblanks' || s === 'fillblank' || s === 'fill') return 'short';
+    if (s === 'diagram' || s === 'numerical') return 'long';
+    return 'short';
+  };
+
   let totalMarks = 0;
   for (const section of parsed.sections) {
     let sectionTotal = 0;
-    for (const q of section.questions) sectionTotal += q.marks;
+    for (const q of section.questions) {
+      q.type = normalizeType(q.type);
+      sectionTotal += q.marks;
+    }
     section.totalMarks = sectionTotal;
     totalMarks += sectionTotal;
   }
@@ -150,31 +173,77 @@ function parseAndValidate(raw: string): GeneratedPaper {
   return parsed;
 }
 
+// Tokens needed ≈ 220 per question + 80 per section + 500 overhead
+function calcMaxTokens(assignment: IAssignment): number {
+  const totalQ = assignment.questionTypes.reduce((s, qt) => s + qt.count, 0);
+  const sections = assignment.questionTypes.length;
+  return Math.min(Math.ceil(totalQ * 220 + sections * 80 + 600), 10500);
+}
+
+async function callGroq(
+  prompt: string,
+  maxTokens: number,
+  onProgress?: (percentage: number, message: string) => void,
+  attempt = 0
+): Promise<string> {
+  try {
+    const { data } = await axios.post<{ choices: Array<{ message: { content: string } }> }>(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'You are an expert exam paper creator. Respond with ONLY valid JSON — no markdown, no prose, no explanation.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: maxTokens,
+        stream: false,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${config.groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        responseType: 'json',
+        decompress: true,
+      }
+    );
+    return data.choices[0]?.message?.content || '';
+  } catch (err) {
+    const axErr = err as AxiosError<{ error?: { message?: string } }>;
+    const status = axErr.response?.status ?? 0;
+    const errMsg = axErr.response?.data?.error?.message ?? axErr.message;
+
+    if (status === 429 || status === 413) {
+      const waitMatch = errMsg.match(/try again in ([0-9.]+)s/i);
+      const waitSec = waitMatch ? Math.ceil(parseFloat(waitMatch[1])) + 3 : 65;
+
+      if (attempt < 3) {
+        onProgress?.(30, `Rate limit reached. Retrying in ${waitSec}s... (${attempt + 1}/3)`);
+        await new Promise((r) => setTimeout(r, waitSec * 1000));
+        onProgress?.(40, `Retrying... (${attempt + 2}/3)`);
+        return callGroq(prompt, maxTokens, onProgress, attempt + 1);
+      }
+      throw new Error(`Rate limit exceeded. Please wait 1 minute and try again.`);
+    }
+
+    throw new Error(`Groq API error ${status}: ${errMsg}`);
+  }
+}
+
 export async function generateQuestionPaper(
   assignment: IAssignment,
   onProgress?: (percentage: number, message: string) => void
 ): Promise<GeneratedPaper> {
   const prompt = buildPrompt(assignment);
+  const maxTokens = calcMaxTokens(assignment);
 
   onProgress?.(10, 'Analyzing assignment requirements...');
   onProgress?.(25, 'Connecting to Groq AI...');
 
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      {
-        role: 'system',
-        content: 'You are an expert exam paper creator. Respond with ONLY valid JSON — no markdown, no prose, no explanation.',
-      },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.7,
-    max_tokens: 8192,
-  });
+  const raw = await callGroq(prompt, maxTokens, onProgress);
 
   onProgress?.(85, 'Generating questions...');
-
-  const raw = response.choices[0]?.message?.content || '';
   onProgress?.(92, 'Validating and organizing...');
 
   const paper = parseAndValidate(raw);

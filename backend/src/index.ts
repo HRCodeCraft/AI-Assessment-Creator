@@ -7,6 +7,7 @@ import { connectRedis } from './lib/redis';
 import { initializeSocket } from './lib/socket';
 import { startGenerationWorker } from './workers/generationWorker';
 import apiRouter from './routes';
+import { Assignment } from './models/Assignment';
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,6 +34,15 @@ async function bootstrap(): Promise<void> {
     // Connect to MongoDB
     await mongoose.connect(config.mongoUri);
     console.log('[MongoDB] Connected to', config.mongoUri);
+
+    // Clean up stuck jobs from previous server run
+    const stuck = await Assignment.updateMany(
+      { status: 'processing' },
+      { status: 'failed', errorMessage: 'Server restarted during generation. Please try again.' }
+    );
+    if (stuck.modifiedCount > 0) {
+      console.log(`[Server] Marked ${stuck.modifiedCount} stuck assignment(s) as failed`);
+    }
 
     // Connect to Redis
     await connectRedis();
