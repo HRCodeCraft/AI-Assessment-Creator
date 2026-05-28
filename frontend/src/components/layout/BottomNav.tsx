@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Library, Wand2, KeyRound } from 'lucide-react';
+import { BookOpen, Library, Wand2, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
-  { label: 'Home', icon: Home, href: '/' },
-  { label: 'Assignments', icon: BookOpen, href: '/assignments' },
+  { label: 'Assignments', icon: BookOpen, href: '/' },
   { label: 'Answer Keys', icon: KeyRound, href: '/answer-keys' },
   { label: 'Library', icon: Library, href: '/library' },
   { label: 'AI Toolkit', icon: Wand2, href: '/toolkit' },

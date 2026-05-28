@@ -31,7 +31,7 @@ export default function SettingsForm() {
 
       {/* Teacher Profile */}
       <Section title="Teacher Profile" icon={<User size={16} />}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Full Name" icon={<User size={14} />}>
             <input
               type="text"
@@ -73,7 +73,7 @@ export default function SettingsForm() {
             className="input-field"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Address / Sector" icon={<MapPin size={14} />}>
             <input
               type="text"
@@ -117,19 +117,19 @@ export default function SettingsForm() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-2 flex-wrap sm:flex-nowrap"
             >
               <div className="w-7 h-7 rounded-lg bg-ink-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-xs font-bold text-ink-500">{i + 1}</span>
               </div>
 
               {/* Class dropdown */}
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-[120px]">
                 <GraduationCap size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
                 <select
                   value={cls.className}
                   onChange={(e) => updateClass(cls.id, { className: e.target.value })}
-                  className="input-field pl-8 py-2.5 appearance-none text-sm"
+                  className="input-field pl-8 py-2.5 appearance-none text-sm w-full"
                 >
                   <option value="">Select Class</option>
                   {CLASS_OPTIONS.map((g) => (
@@ -139,12 +139,12 @@ export default function SettingsForm() {
               </div>
 
               {/* Section dropdown */}
-              <div className="relative w-32">
+              <div className="relative w-28 flex-shrink-0">
                 <Layers size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
                 <select
                   value={cls.section}
                   onChange={(e) => updateClass(cls.id, { section: e.target.value })}
-                  className="input-field pl-8 py-2.5 appearance-none text-sm"
+                  className="input-field pl-8 py-2.5 appearance-none text-sm w-full"
                 >
                   <option value="">Section</option>
                   {SECTION_OPTIONS.map((s) => (
@@ -153,9 +153,9 @@ export default function SettingsForm() {
                 </select>
               </div>
 
-              {/* Badge preview */}
+              {/* Badge preview — desktop only */}
               {cls.className && cls.section && (
-                <span className="text-xs font-semibold text-ink-600 bg-ink-100 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                <span className="hidden sm:inline text-xs font-semibold text-ink-600 bg-ink-100 px-2.5 py-1 rounded-lg whitespace-nowrap">
                   {cls.className} – {cls.section}
                 </span>
               )}
@@ -164,7 +164,7 @@ export default function SettingsForm() {
                 onClick={() => removeClass(cls.id)}
                 disabled={settings.classes.length <= 1}
                 className="w-7 h-7 rounded-lg hover:bg-red-50 hover:text-red-500 text-ink-400
-                  flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
               >
                 <X size={14} />
               </button>
