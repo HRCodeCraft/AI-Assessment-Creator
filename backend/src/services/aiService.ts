@@ -208,7 +208,8 @@ async function callGroq(
         decompress: true,
       }
     );
-    return data.choices[0]?.message?.content || '';
+    if (!data.choices?.length) throw new Error('Groq returned empty choices array');
+    return data.choices[0].message.content || '';
   } catch (err) {
     const axErr = err as AxiosError<{ error?: { message?: string } }>;
     const status = axErr.response?.status ?? 0;

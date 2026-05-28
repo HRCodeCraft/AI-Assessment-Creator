@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -34,8 +34,15 @@ export default function AssignmentForm() {
   const [file, setFile] = useState<File | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showProgress, setShowProgress] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { generation, startGeneration, resetGeneration } = useAssignmentStore();
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
   const { joinAssignment } = useWebSocket();
 
   function updateForm(patch: Partial<AssignmentFormData>) {
@@ -94,19 +101,21 @@ export default function AssignmentForm() {
       joinAssignment(assignmentId);
 
       // Poll as fallback for WebSocket
-      const poll = setInterval(async () => {
+      pollRef.current = setInterval(async () => {
         try {
           const progress = await assignmentsApi.getProgress(assignmentId);
           const d = progress.data.data;
           if (d.status === 'completed' && d.paperId) {
-            clearInterval(poll);
+            clearInterval(pollRef.current!);
+            pollRef.current = null;
             setTimeout(() => {
               setShowProgress(false);
               resetGeneration();
               router.push(`/paper/${d.paperId}`);
             }, 1200);
           } else if (d.status === 'failed') {
-            clearInterval(poll);
+            clearInterval(pollRef.current!);
+            pollRef.current = null;
           }
         } catch {
           // silently ignore poll errors

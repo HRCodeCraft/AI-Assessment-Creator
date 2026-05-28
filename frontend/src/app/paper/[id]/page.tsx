@@ -16,6 +16,7 @@ export default function PaperPage() {
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exportError, setExportError] = useState('');
   const paperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +48,8 @@ export default function PaperPage() {
       pdf.save(`${paper.metadata.subject}-${paper.metadata.grade}-paper.pdf`);
     } catch (err) {
       console.error('PDF export failed:', err);
+      setExportError('PDF export failed. Please try again.');
+      setTimeout(() => setExportError(''), 4000);
     }
   }
 
@@ -94,6 +97,9 @@ export default function PaperPage() {
             <span className="font-semibold text-brand-200">{paper.metadata.topic}</span> chapters:
           </p>
 
+          {exportError && (
+            <p className="text-red-300 text-xs mb-2">{exportError}</p>
+          )}
           <div className="flex items-center gap-3">
             <button
               onClick={handleDownload}
