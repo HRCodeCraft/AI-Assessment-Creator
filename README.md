@@ -6,8 +6,8 @@ An AI-powered full-stack web app that lets teachers generate structured, multi-s
 
 ## Live Demo
 
-> **App:** https://your-frontend.up.railway.app  
-> **API:** https://your-backend.up.railway.app
+> **App:** https://ai-assessment-creator-six.vercel.app  
+> **API:** https://vedaai-backend-48cg.onrender.com
 
 ---
 
