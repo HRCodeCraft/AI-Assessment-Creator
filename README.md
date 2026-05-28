@@ -6,8 +6,8 @@ An AI-powered full-stack web app that lets teachers generate structured, multi-s
 
 ## Live Demo
 
-> **Frontend:** https://your-app.vercel.app  
-> **Backend API:** https://your-app.railway.app
+> **App:** https://your-frontend.up.railway.app  
+> **API:** https://your-backend.up.railway.app
 
 ---
 
