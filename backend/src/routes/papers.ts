@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { QuestionPaper } from '../models/QuestionPaper';
 import { Assignment } from '../models/Assignment';
 
@@ -44,6 +45,9 @@ router.get('/by-assignment/:assignmentId', async (req: Request, res: Response) =
 
 // GET /api/papers/:id - Get question paper
 router.get('/:id', async (req: Request, res: Response) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ success: false, error: 'Paper not found' });
+  }
   try {
     const paper = await QuestionPaper.findById(req.params.id).lean();
     if (!paper) {

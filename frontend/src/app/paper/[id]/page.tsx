@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw } from 'lucide-react';
+import { ArrowDownToLine } from 'lucide-react';
 import { papersApi, QuestionPaper } from '@/lib/api';
 import QuestionPaperView from '@/components/QuestionPaper';
 import AppShell from '@/components/layout/AppShell';
@@ -101,21 +101,23 @@ export default function PaperPage() {
             <p className="text-red-300 text-xs mb-2">{exportError}</p>
           )}
           <div className="flex items-center gap-3">
-            {/* Mobile: icon only; Desktop: full label */}
+            {/* Desktop: full pill button */}
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 bg-white text-ink-900 px-3 md:px-4 py-2 rounded-full text-sm font-semibold hover:bg-ink-100 transition-colors"
+              className="hidden sm:flex items-center gap-2 bg-white text-ink-900 px-4 py-2 rounded-full text-sm font-semibold hover:bg-ink-100 transition-colors"
             >
-              <Download size={15} />
-              <span className="hidden sm:inline">Download as PDF</span>
+              <ArrowDownToLine size={15} />
+              Download as PDF
             </button>
+
+            {/* Mobile: icon-only rounded button */}
             <button
-              onClick={() => router.push('/create')}
-              className="flex items-center gap-2 border border-white/20 text-white/80 px-3 md:px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
+              onClick={handleDownload}
+              className="sm:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
             >
-              <RefreshCw size={14} />
-              <span className="hidden sm:inline">Regenerate</span>
+              <ArrowDownToLine size={20} className="text-white" />
             </button>
+
           </div>
         </motion.div>
 
