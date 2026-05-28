@@ -81,7 +81,7 @@ export default function PaperPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: 'Create New', href: '/create' }]}>
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-4xl mx-auto space-y-4 w-full min-w-0">
 
         {/* AI greeting banner — Download button lives here */}
         <motion.div

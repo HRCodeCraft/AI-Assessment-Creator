@@ -20,12 +20,14 @@ html {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
   background: linear-gradient(135deg, #EFEFEF 0%, #DADADA 100%);
   min-height: 100vh;
   color: #1e293b;
+  overflow-x: hidden;
 }
 
 /* Scrollbar */

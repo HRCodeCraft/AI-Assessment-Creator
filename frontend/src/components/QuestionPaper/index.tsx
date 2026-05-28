@@ -29,7 +29,7 @@ export default function QuestionPaperView({ paper, paperRef }: Props) {
       </div>
 
       {/* Meta row */}
-      <div className="px-5 md:px-10 py-3 flex items-center justify-between border-b border-ink-200">
+      <div className="px-5 md:px-10 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-ink-200">
         <span className="text-sm text-ink-700">Time Allowed: {paper.metadata.duration}</span>
         <span className="text-sm text-ink-700">Maximum Marks: {paper.metadata.totalMarks}</span>
       </div>
@@ -44,19 +44,19 @@ export default function QuestionPaperView({ paper, paperRef }: Props) {
 
         {/* Student info lines */}
         <div className="mb-6 space-y-2">
-          <div className="flex items-center gap-3 text-sm text-ink-700">
-            <span className="font-medium">Name:</span>
-            <span className="flex-1 border-b border-ink-700" style={{ minWidth: 200 }} />
+          <div className="flex items-center gap-3 text-sm text-ink-700 min-w-0">
+            <span className="font-medium flex-shrink-0">Name:</span>
+            <span className="flex-1 border-b border-ink-700 min-w-0" />
           </div>
-          <div className="flex items-center gap-3 text-sm text-ink-700">
-            <span className="font-medium">Roll Number:</span>
-            <span className="flex-1 border-b border-ink-700" style={{ minWidth: 160 }} />
+          <div className="flex items-center gap-3 text-sm text-ink-700 min-w-0">
+            <span className="font-medium flex-shrink-0">Roll Number:</span>
+            <span className="flex-1 border-b border-ink-700 min-w-0" />
           </div>
-          <div className="flex items-center gap-3 text-sm text-ink-700">
+          <div className="flex items-center gap-3 text-sm text-ink-700 flex-wrap">
             <span className="font-medium">Class:</span>
             <span className="text-ink-500">{paper.metadata.grade}</span>
-            <span className="font-medium ml-4">Section:</span>
-            <span className="w-20 border-b border-ink-700" />
+            <span className="font-medium ml-2">Section:</span>
+            <span className="flex-1 border-b border-ink-700 min-w-[48px]" />
           </div>
         </div>
 
@@ -85,11 +85,11 @@ function SectionBlock({ section }: { section: Section }) {
 
       <ol className="space-y-2.5">
         {section.questions.map((q) => (
-          <li key={q.number} className="text-sm">
-            <div className="flex items-start gap-2">
+          <li key={q.number} className="text-sm min-w-0">
+            <div className="flex items-start gap-2 min-w-0">
               <span className="font-medium text-ink-800 flex-shrink-0 w-6">{q.number}.</span>
-              <div className="flex-1">
-                <span className="text-ink-800">{q.text}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-ink-800 break-words">{q.text}</span>
                 <span className="ml-1.5 text-ink-500 font-medium">[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                 {q.options && (
                   <ul className="mt-1.5 ml-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
@@ -117,9 +117,9 @@ function AnswerKey({ sections }: { sections: Section[] }) {
       <h3 className="text-base font-bold text-ink-900 mb-4 text-center">ANSWER KEY</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1.5">
         {allQuestions.map((q) => (
-          <div key={q.number} className="flex items-start gap-2.5 text-sm">
+          <div key={q.number} className="flex items-start gap-2.5 text-sm min-w-0">
             <span className="font-semibold text-ink-600 flex-shrink-0 w-8">Q{q.number}.</span>
-            <span className="text-ink-800">{q.correctAnswer || '—'}</span>
+            <span className="text-ink-800 break-words min-w-0 flex-1">{q.correctAnswer || '—'}</span>
           </div>
         ))}
       </div>
