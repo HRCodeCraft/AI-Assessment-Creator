@@ -4,12 +4,14 @@ import { config } from '../config';
 // BullMQ bundles its own ioredis — pass a plain URL, not a shared Redis instance
 function redisConnection() {
   const url = new URL(config.redisUrl);
+  const tls = config.redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined;
   return {
     host: url.hostname,
     port: parseInt(url.port || '6379', 10),
-    password: url.password || undefined,
+    password: url.password ? decodeURIComponent(url.password) : undefined,
     db: parseInt(url.pathname?.slice(1) || '0', 10) || 0,
     maxRetriesPerRequest: null as null,
+    tls,
   };
 }
 
