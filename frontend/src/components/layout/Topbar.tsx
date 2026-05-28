@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, ChevronRight, Settings, LogOut, CheckCheck } from 'lucide-react';
+import { Bell, ChevronRight, Settings, LogOut, CheckCheck, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '@/store/settingsStore';
+import Link from 'next/link';
 
 interface TopbarProps {
   breadcrumbs?: { label: string; href?: string }[];
@@ -50,18 +51,29 @@ export default function Topbar({ breadcrumbs = [] }: TopbarProps) {
   };
 
   return (
-    <header className="h-[56px] bg-white/80 backdrop-blur-sm border-b border-ink-100 flex items-center justify-between px-6 sticky top-0 z-20">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm">
-        {breadcrumbs.map((crumb, i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight size={14} className="text-ink-300" />}
-            <span className={i === breadcrumbs.length - 1 ? 'text-ink-800 font-medium' : 'text-ink-400'}>
-              {crumb.label}
+    <header className="h-[56px] bg-white/90 backdrop-blur-sm border-b border-ink-100 flex items-center justify-between px-4 md:px-6 sticky top-0 z-20">
+      {/* Mobile: VedaAI logo | Desktop: Breadcrumbs */}
+      <div className="flex items-center">
+        {/* Logo — mobile only */}
+        <Link href="/" className="md:hidden flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
+            <span className="text-white font-bold text-xs">V</span>
+          </div>
+          <span className="text-ink-900 font-bold text-[15px] tracking-tight">VedaAI</span>
+        </Link>
+
+        {/* Breadcrumbs — desktop only */}
+        <nav className="hidden md:flex items-center gap-1.5 text-sm">
+          {breadcrumbs.map((crumb, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              {i > 0 && <ChevronRight size={14} className="text-ink-300" />}
+              <span className={i === breadcrumbs.length - 1 ? 'text-ink-800 font-medium' : 'text-ink-400'}>
+                {crumb.label}
+              </span>
             </span>
-          </span>
-        ))}
-      </nav>
+          ))}
+        </nav>
+      </div>
 
       <div className="flex items-center gap-2">
 
@@ -130,7 +142,7 @@ export default function Topbar({ breadcrumbs = [] }: TopbarProps) {
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-ink-700 to-ink-900 flex items-center justify-center">
               <span className="text-white text-xs font-semibold">{initial}</span>
             </div>
-            <span className="text-sm font-medium text-ink-700 max-w-[120px] truncate">
+            <span className="hidden md:block text-sm font-medium text-ink-700 max-w-[120px] truncate">
               {settings.teacherName || 'Teacher'}
             </span>
           </button>

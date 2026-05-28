@@ -186,7 +186,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           onClick={() => router.push('/create')}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 btn-primary px-6 py-3 shadow-btn-hover"
+          className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 btn-primary px-6 py-3 shadow-btn-hover"
         >
           <Plus size={16} />
           Create Assignment

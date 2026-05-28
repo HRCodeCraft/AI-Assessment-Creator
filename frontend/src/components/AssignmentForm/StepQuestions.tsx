@@ -158,19 +158,19 @@ export default function StepQuestions({
 
         {/* Question Types */}
         <div>
-          {/* Column headers */}
-          <div className="flex items-center mb-2 px-1">
+          {/* Column headers — desktop only */}
+          <div className="hidden md:flex items-center mb-2 px-1">
             <span className="flex-1 text-sm font-bold text-ink-800">Question Type</span>
             <span className="w-[110px] text-center text-sm font-bold text-ink-800 mr-3">No. of Questions</span>
             <span className="w-[110px] text-center text-sm font-bold text-ink-800">Marks</span>
           </div>
 
           {/* Rows */}
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {form.questionTypes.map((qt, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <div key={i} className="bg-white border border-ink-200 rounded-xl shadow-sm p-3 space-y-3 md:flex md:items-center md:gap-3 md:bg-transparent md:border-0 md:rounded-none md:shadow-none md:p-0 md:space-y-0">
                 {/* Dropdown */}
-                <div className="flex-1 flex items-center gap-2 bg-white border border-ink-200 rounded-xl px-3 py-2.5 shadow-sm">
+                <div className="flex items-center gap-2 md:flex-1 md:bg-white md:border md:border-ink-200 md:rounded-xl md:px-3 md:py-2.5 md:shadow-sm">
                   <select
                     value={qt.type}
                     onChange={(e) => {
@@ -194,21 +194,27 @@ export default function StepQuestions({
                   </button>
                 </div>
 
-                {/* Count stepper */}
-                <Stepper
-                  value={qt.count}
-                  onDec={() => updateRow(i, { count: Math.max(1, qt.count - 1) })}
-                  onInc={() => updateRow(i, { count: qt.count + 1 })}
-                  onChange={(v) => updateRow(i, { count: v })}
-                />
-
-                {/* Marks stepper */}
-                <Stepper
-                  value={qt.marksEach}
-                  onDec={() => updateRow(i, { marksEach: Math.max(1, qt.marksEach - 1) })}
-                  onInc={() => updateRow(i, { marksEach: qt.marksEach + 1 })}
-                  onChange={(v) => updateRow(i, { marksEach: v })}
-                />
+                {/* Steppers — side-by-side on mobile with labels, inline on desktop */}
+                <div className="grid grid-cols-2 gap-3 md:flex md:gap-3">
+                  <div>
+                    <p className="text-xs text-ink-500 font-medium mb-1.5 md:hidden">No. of Questions</p>
+                    <Stepper
+                      value={qt.count}
+                      onDec={() => updateRow(i, { count: Math.max(1, qt.count - 1) })}
+                      onInc={() => updateRow(i, { count: qt.count + 1 })}
+                      onChange={(v) => updateRow(i, { count: v })}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-ink-500 font-medium mb-1.5 md:hidden">Marks</p>
+                    <Stepper
+                      value={qt.marksEach}
+                      onDec={() => updateRow(i, { marksEach: Math.max(1, qt.marksEach - 1) })}
+                      onInc={() => updateRow(i, { marksEach: qt.marksEach + 1 })}
+                      onChange={(v) => updateRow(i, { marksEach: v })}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>

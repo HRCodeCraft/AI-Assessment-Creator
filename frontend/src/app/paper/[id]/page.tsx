@@ -101,19 +101,20 @@ export default function PaperPage() {
             <p className="text-red-300 text-xs mb-2">{exportError}</p>
           )}
           <div className="flex items-center gap-3">
+            {/* Mobile: icon only; Desktop: full label */}
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 bg-white text-ink-900 px-4 py-2 rounded-full text-sm font-semibold hover:bg-ink-100 transition-colors"
+              className="flex items-center gap-2 bg-white text-ink-900 px-3 md:px-4 py-2 rounded-full text-sm font-semibold hover:bg-ink-100 transition-colors"
             >
               <Download size={15} />
-              Download as PDF
+              <span className="hidden sm:inline">Download as PDF</span>
             </button>
             <button
               onClick={() => router.push('/create')}
-              className="flex items-center gap-2 border border-white/20 text-white/80 px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 border border-white/20 text-white/80 px-3 md:px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
             >
               <RefreshCw size={14} />
-              Regenerate
+              <span className="hidden sm:inline">Regenerate</span>
             </button>
           </div>
         </motion.div>

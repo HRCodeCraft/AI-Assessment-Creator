@@ -22,19 +22,19 @@ export default function QuestionPaperView({ paper, paperRef }: Props) {
       className="bg-white rounded-2xl shadow-card border border-ink-100 overflow-hidden"
     >
       {/* Paper header */}
-      <div className="px-10 pt-8 pb-4 text-center border-b border-ink-200">
+      <div className="px-5 md:px-10 pt-8 pb-4 text-center border-b border-ink-200">
         <h1 className="text-xl font-bold text-ink-900">{schoolLine || 'School Name'}</h1>
         <p className="text-sm text-ink-700 mt-1">Subject: {paper.metadata.subject}</p>
         <p className="text-sm text-ink-700">Class: {paper.metadata.grade}</p>
       </div>
 
       {/* Meta row */}
-      <div className="px-10 py-3 flex items-center justify-between border-b border-ink-200">
+      <div className="px-5 md:px-10 py-3 flex items-center justify-between border-b border-ink-200">
         <span className="text-sm text-ink-700">Time Allowed: {paper.metadata.duration}</span>
         <span className="text-sm text-ink-700">Maximum Marks: {paper.metadata.totalMarks}</span>
       </div>
 
-      <div className="px-10 py-4">
+      <div className="px-5 md:px-10 py-4">
         {/* General instructions */}
         <div className="mb-4">
           {paper.metadata.instructions.map((inst, i) => (
@@ -92,7 +92,7 @@ function SectionBlock({ section }: { section: Section }) {
                 <span className="text-ink-800">{q.text}</span>
                 <span className="ml-1.5 text-ink-500 font-medium">[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                 {q.options && (
-                  <ul className="mt-1.5 ml-2 grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <ul className="mt-1.5 ml-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
                     {q.options.map((opt, i) => (
                       <li key={i} className="text-xs text-ink-700">{opt}</li>
                     ))}
@@ -115,7 +115,7 @@ function AnswerKey({ sections }: { sections: Section[] }) {
   return (
     <div className="mt-8 pt-6 border-t-2 border-dashed border-ink-300">
       <h3 className="text-base font-bold text-ink-900 mb-4 text-center">ANSWER KEY</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1.5">
         {allQuestions.map((q) => (
           <div key={q.number} className="flex items-start gap-2.5 text-sm">
             <span className="font-semibold text-ink-600 flex-shrink-0 w-8">Q{q.number}.</span>
